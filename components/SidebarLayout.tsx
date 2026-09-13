@@ -26,8 +26,8 @@ export default function SidebarLayout({
 
   return (
     <div className="flex min-h-screen bg-slate-50">
-      {/* Mobile top bar */}
-      <header className="fixed inset-x-0 top-0 z-30 flex h-14 items-center gap-3 border-b border-slate-200 bg-white px-4 md:hidden">
+      {/* Top bar (all sizes) */}
+      <header className="fixed inset-x-0 top-0 z-30 flex h-14 items-center gap-3 border-b border-slate-200 bg-white px-4">
         <button
           onClick={() => setOpen(true)}
           aria-label="Open menu"
@@ -43,19 +43,19 @@ export default function SidebarLayout({
         </div>
       </header>
 
-      {/* Backdrop (mobile, when open) */}
+      {/* Backdrop (when open) */}
       {open && (
         <div
-          className="fixed inset-0 z-40 bg-slate-900/40 md:hidden"
+          className="fixed inset-0 z-40 bg-slate-900/40"
           onClick={() => setOpen(false)}
           aria-hidden
         />
       )}
 
-      {/* Sidebar — off-canvas on mobile, static on desktop */}
+      {/* Sidebar — off-canvas drawer on all sizes, toggled by the ☰ button */}
       <aside
         onClick={() => setOpen(false)}
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-slate-200 bg-white transition-transform duration-200 ease-out md:static md:z-auto md:w-60 md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-slate-200 bg-white transition-transform duration-200 ease-out ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -69,7 +69,7 @@ export default function SidebarLayout({
           <button
             onClick={() => setOpen(false)}
             aria-label="Close menu"
-            className="rounded-lg p-1 text-slate-500 transition hover:bg-slate-100 md:hidden"
+            className="rounded-lg p-1 text-slate-500 transition hover:bg-slate-100"
           >
             <CloseIcon />
           </button>
@@ -82,8 +82,8 @@ export default function SidebarLayout({
         )}
       </aside>
 
-      {/* Main content (padded below the mobile top bar) */}
-      <div className="min-w-0 flex-1 pt-14 md:pt-0">{children}</div>
+      {/* Main content (padded below the fixed top bar) */}
+      <div className="min-w-0 flex-1 pt-14">{children}</div>
     </div>
   );
 }
