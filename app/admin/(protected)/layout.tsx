@@ -1,7 +1,7 @@
 import { getSessionEmail } from "@/lib/session";
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import AdminNav from "@/components/AdminNav";
+import SidebarLayout from "@/components/SidebarLayout";
 
 export const dynamic = "force-dynamic";
 
@@ -20,23 +20,13 @@ export default async function ProtectedAdminLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
-      <aside className="flex w-60 shrink-0 flex-col border-r border-slate-200 bg-white">
-        <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4">
-          <Link href="/admin" className="text-lg font-bold text-slate-900">
-            Nuvoco
-          </Link>
-          <span className="rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700">
-            Admin
-          </span>
-        </div>
-
-        <div className="flex-1 px-3 py-4">
-          <AdminNav />
-        </div>
-
-        <div className="border-t border-slate-100 px-4 py-4">
-          <p className="mb-2 truncate text-xs text-slate-500" title={email}>
+    <SidebarLayout
+      title="Nuvoco"
+      badge="Admin"
+      nav={<AdminNav />}
+      footer={
+        <div className="space-y-2">
+          <p className="truncate text-xs text-slate-500" title={email}>
             {email}
           </p>
           <form action="/api/logout" method="post">
@@ -45,11 +35,9 @@ export default async function ProtectedAdminLayout({
             </button>
           </form>
         </div>
-      </aside>
-
-      <div className="flex-1">
-        <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6">{children}</main>
-      </div>
-    </div>
+      }
+    >
+      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6">{children}</main>
+    </SidebarLayout>
   );
 }
