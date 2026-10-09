@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getVisitors, STATUS_OUT } from "@/lib/sheets";
 import { getSessionEmail } from "@/lib/session";
 import { todayKeyIST, dateKeyIST } from "@/lib/time";
+import { buildRoomStatus } from "@/lib/rooms";
 
 export const dynamic = "force-dynamic";
 
@@ -23,9 +24,9 @@ export async function GET() {
       arr.reduce((n, v) => n + heads(v), 0);
 
     const inHouse = visitors.filter((v) => !v.punchOut);
-    const roomsOccupied = new Set(
-      inHouse.map((v) => v.room.trim()).filter(Boolean)
-    ).size;
+    const rooms = buildRoomStatus(inHouse);
+    const roomsOccupied = rooms.filter((r) => r.occupied).length;
+    const configuredRooms = rooms.filter((r) => !r.unlisted);
 
     const checkedInToday = visitors.filter(
       (v) => dateKeyIST(v.punchIn) === today
@@ -39,13 +40,16 @@ export async function GET() {
       total: sumHeads(visitors),
       inHouse: sumHeads(inHouse),
       roomsOccupied,
+      // Total / vacant are 0 when GUEST_HOUSE_ROOMS isn't configured.
+      roomsTotal: configuredRooms.length,
+      roomsVacant: configuredRooms.filter((r) => !r.occupied).length,
       checkInsToday: sumHeads(checkedInToday),
       punchOutsToday: sumHeads(punchedOutToday),
       checkedOut: visitors.filter((v) => v.status === STATUS_OUT || v.punchOut)
         .length,
     };
 
-    return NextResponse.json({ stats });
+    return NextResponse.json({ stats, rooms });
   } catch (err) {
     console.error("Stats failed:", err);
     return NextResponse.json({ error: "Could not load stats." }, { status: 500 });

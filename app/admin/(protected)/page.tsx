@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import StatCards, { type Stats } from "@/components/StatCards";
+import RoomGrid from "@/components/RoomGrid";
+import type { RoomStatus } from "@/lib/rooms";
 import VisitorTable from "@/components/VisitorTable";
 import VisitorForm from "@/components/VisitorForm";
 import QrCodePanel from "@/components/QrCodePanel";
@@ -11,6 +13,7 @@ import type { VisitorInput } from "@/lib/validation";
 export default function AdminDashboard() {
   const [visitors, setVisitors] = useState<Visitor[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
+  const [rooms, setRooms] = useState<RoomStatus[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [busyToken, setBusyToken] = useState<string | null>(null);
@@ -44,6 +47,7 @@ export default function AdminDashboard() {
       const sData = await sRes.json();
       setVisitors(vData.visitors ?? []);
       setStats(sData.stats ?? null);
+      setRooms(sData.rooms ?? []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load.");
     } finally {
@@ -118,6 +122,8 @@ export default function AdminDashboard() {
       </div>
 
       <StatCards stats={stats} />
+
+      <RoomGrid rooms={rooms} />
 
       <QrCodePanel
         path="/visitor"

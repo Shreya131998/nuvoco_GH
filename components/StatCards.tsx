@@ -4,6 +4,8 @@ export interface Stats {
   total: number;
   inHouse: number;
   roomsOccupied: number;
+  roomsTotal: number;
+  roomsVacant: number;
   checkInsToday: number;
   punchOutsToday: number;
   checkedOut: number;
