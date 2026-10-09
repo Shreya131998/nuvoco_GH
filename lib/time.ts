@@ -43,3 +43,26 @@ export function dateKeyIST(value: string | undefined | null): string {
   if (Number.isNaN(parsed.getTime())) return "";
   return todayKeyIST(parsed);
 }
+
+/**
+ * Turn a raw sheet cell into display text. Numbers are treated as Google Sheets
+ * date serials (days since 1899-12-30, in the sheet's local time = IST) — this
+ * happens when Sheets auto-parsed one of our time strings — and are converted
+ * back to the same format nowIST() writes.
+ */
+export function cellToText(value: unknown): string {
+  if (value === null || value === undefined) return "";
+  if (typeof value !== "number") return value.toString();
+  // Serial is IST wall-clock time; build it as UTC and format in UTC so no
+  // timezone shift is applied. Round to the minute to drop float noise.
+  const ms = Math.round(((value - 25569) * 86400000) / 60000) * 60000;
+  return new Intl.DateTimeFormat("en-IN", {
+    timeZone: "UTC",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  }).format(new Date(ms));
+}

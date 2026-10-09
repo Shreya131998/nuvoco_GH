@@ -1,4 +1,5 @@
 import { google, type sheets_v4 } from "googleapis";
+import { cellToText } from "@/lib/time";
 
 // ---------------------------------------------------------------------------
 // Sheet schema. Column order MUST match the header row written by initSheet().
@@ -109,8 +110,10 @@ function getClient(): sheets_v4.Sheets {
 // Row <-> Visitor mapping.
 // ---------------------------------------------------------------------------
 
-function rowToVisitor(row: string[], rowNumber: number): Visitor {
+function rowToVisitor(row: unknown[], rowNumber: number): Visitor {
   const at = (i: number) => (row[i] ?? "").toString();
+  // Date/time columns may hold Sheets date serials from older writes.
+  const time = (i: number) => cellToText(row[i]);
   return {
     rowNumber,
     token: at(COL.TOKEN),
@@ -119,15 +122,15 @@ function rowToVisitor(row: string[], rowNumber: number): Visitor {
     room: at(COL.ROOM),
     designation: at(COL.DESIGNATION),
     mobile: at(COL.MOBILE),
-    arrival: at(COL.ARRIVAL),
-    expectedDeparture: at(COL.EXPECTED_DEPARTURE),
+    arrival: time(COL.ARRIVAL),
+    expectedDeparture: time(COL.EXPECTED_DEPARTURE),
     purpose: at(COL.PURPOSE),
     reference: at(COL.REFERENCE),
-    punchIn: at(COL.PUNCH_IN),
-    punchOut: at(COL.PUNCH_OUT),
+    punchIn: time(COL.PUNCH_IN),
+    punchOut: time(COL.PUNCH_OUT),
     status: at(COL.STATUS),
     enteredBy: at(COL.ENTERED_BY),
-    createdAt: at(COL.CREATED_AT),
+    createdAt: time(COL.CREATED_AT),
     secondPerson: at(COL.SECOND_PERSON),
   };
 }
@@ -142,9 +145,11 @@ export async function getVisitors(): Promise<Visitor[]> {
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: getSheetId(),
     range: `${SHEET_TAB}!A2:P`,
+    // Unformatted so date cells come back as serial numbers we can convert.
+    valueRenderOption: "UNFORMATTED_VALUE",
   });
   const rows = res.data.values ?? [];
-  return rows.map((row, i) => rowToVisitor(row as string[], i + 2));
+  return rows.map((row, i) => rowToVisitor(row, i + 2));
 }
 
 export async function findByToken(token: string): Promise<Visitor | null> {
@@ -159,7 +164,9 @@ export async function appendRow(values: string[]): Promise<void> {
   await sheets.spreadsheets.values.append({
     spreadsheetId: getSheetId(),
     range: `${SHEET_TAB}!A1`,
-    valueInputOption: "USER_ENTERED",
+    // RAW: store exactly what we send. USER_ENTERED let Sheets parse our IST
+    // time strings into date serial numbers (e.g. "01 Oct 2026, 03:45 pm").
+    valueInputOption: "RAW",
     insertDataOption: "INSERT_ROWS",
     requestBody: { values: [values] },
   });
@@ -174,7 +181,7 @@ export async function updateRow(
   await sheets.spreadsheets.values.update({
     spreadsheetId: getSheetId(),
     range: `${SHEET_TAB}!A${rowNumber}:P${rowNumber}`,
-    valueInputOption: "USER_ENTERED",
+    valueInputOption: "RAW",
     requestBody: { values: [values] },
   });
 }
@@ -273,6 +280,7 @@ export async function getGymEntries(): Promise<GymEntry[]> {
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: getSheetId(),
     range: `${GYM_TAB}!A2:F`,
+    valueRenderOption: "UNFORMATTED_VALUE",
   });
   const rows = res.data.values ?? [];
   return rows.map((row, i) => {
@@ -282,7 +290,7 @@ export async function getGymEntries(): Promise<GymEntry[]> {
       entryNo: at(0),
       name: at(1),
       employeeCode: at(2),
-      time: at(3),
+      time: cellToText(row[3]),
       enteredBy: at(4),
       mobile: at(5),
     };
@@ -295,7 +303,7 @@ export async function appendGymRow(values: string[]): Promise<void> {
   await sheets.spreadsheets.values.append({
     spreadsheetId: getSheetId(),
     range: `${GYM_TAB}!A1`,
-    valueInputOption: "USER_ENTERED",
+    valueInputOption: "RAW",
     insertDataOption: "INSERT_ROWS",
     requestBody: { values: [values] },
   });
