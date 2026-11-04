@@ -26,7 +26,8 @@ async function readGymEntries(): Promise<GymEntry[]> {
 
 /**
  * POST /api/gym — public gym check-in. Body: { name, employeeCode }.
- * Time is stamped automatically. Returns the generated entry number.
+ * Time is stamped automatically. Returns the time and current streak; the
+ * entry number stays internal (sheet + admin page only).
  */
 export async function POST(req: Request) {
   let body: Record<string, unknown>;
@@ -59,7 +60,7 @@ export async function POST(req: Request) {
       [...entries, { rowNumber: 0, entryNo, name, employeeCode, time: now, enteredBy, mobile }],
       employeeCode
     );
-    return NextResponse.json({ entryNo, time: now, streak }, { status: 201 });
+    return NextResponse.json({ time: now, streak }, { status: 201 });
   } catch (err) {
     console.error("Gym entry failed:", err);
     return NextResponse.json(

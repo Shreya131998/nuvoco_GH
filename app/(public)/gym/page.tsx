@@ -13,7 +13,7 @@ import {
 
 export default function GymPublicPage() {
   const [gymEntry, setGymEntry] = useState<
-    { entryNo: string; time: string; streak?: number } | null
+    { time: string; streak?: number } | null
   >(null);
   // undefined = not read from storage yet (avoids flashing the form).
   const [profile, setProfile] = useState<GymProfile | null | undefined>(
@@ -43,7 +43,6 @@ export default function GymPublicPage() {
     setProfile(input);
     setPrefill(undefined);
     setGymEntry({
-      entryNo: data.entryNo as string,
       time: data.time as string,
       streak: typeof data.streak === "number" ? data.streak : undefined,
     });
