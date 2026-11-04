@@ -3,6 +3,11 @@
 
 const IST_TZ = "Asia/Kolkata";
 
+const MONTHS = [
+  "jan", "feb", "mar", "apr", "may", "jun",
+  "jul", "aug", "sep", "oct", "nov", "dec",
+];
+
 /** Current timestamp formatted as "27 Jul 2026, 03:45 PM" in IST. */
 export function nowIST(): string {
   return formatIST(new Date());
@@ -39,6 +44,16 @@ export function todayKeyIST(now: Date = new Date()): string {
  */
 export function dateKeyIST(value: string | undefined | null): string {
   if (!value) return "";
+  // Our display format ("05 Nov 2026, 11:00 pm") is already IST wall time. Read
+  // the date part directly — new Date() would parse it in the server's timezone
+  // (UTC on Vercel) and push late-evening times onto the next IST day.
+  const display = /^(\d{1,2}) ([A-Za-z]{3,4})\w* (\d{4})/.exec(value.trim());
+  if (display) {
+    const month = MONTHS.indexOf(display[2].slice(0, 3).toLowerCase()) + 1;
+    if (month > 0) {
+      return `${display[3]}-${String(month).padStart(2, "0")}-${display[1].padStart(2, "0")}`;
+    }
+  }
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return "";
   return todayKeyIST(parsed);
@@ -65,4 +80,11 @@ export function cellToText(value: unknown): string {
     minute: "2-digit",
     hour12: true,
   }).format(new Date(ms));
+}
+
+/** Shift a YYYY-MM-DD key by a number of calendar days. */
+export function addDaysToKey(key: string, days: number): string {
+  const [y, m, d] = key.split("-").map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d + days));
+  return date.toISOString().slice(0, 10);
 }
