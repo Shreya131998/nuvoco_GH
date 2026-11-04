@@ -3,6 +3,8 @@
 import { useState } from "react";
 
 interface Props {
+  /** Pre-fill values, e.g. remembered details the member wants to correct. */
+  initial?: { name: string; employeeCode: string; mobile: string };
   onSubmit: (input: {
     name: string;
     employeeCode: string;
@@ -10,10 +12,10 @@ interface Props {
   }) => Promise<void>;
 }
 
-export default function GymForm({ onSubmit }: Props) {
-  const [name, setName] = useState("");
-  const [employeeCode, setEmployeeCode] = useState("");
-  const [mobile, setMobile] = useState("");
+export default function GymForm({ initial, onSubmit }: Props) {
+  const [name, setName] = useState(initial?.name ?? "");
+  const [employeeCode, setEmployeeCode] = useState(initial?.employeeCode ?? "");
+  const [mobile, setMobile] = useState(initial?.mobile ?? "");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 

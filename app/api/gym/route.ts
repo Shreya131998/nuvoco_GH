@@ -9,6 +9,7 @@ import {
 import { validateGymInput } from "@/lib/validation";
 import { nowIST, todayKeyIST, dateKeyIST } from "@/lib/time";
 import { getSessionEmail } from "@/lib/session";
+import { currentStreak } from "@/lib/streak";
 
 export const dynamic = "force-dynamic";
 
@@ -52,7 +53,13 @@ export async function POST(req: Request) {
     // Row order must match GYM_HEADERS:
     // Entry No, Name, Employee Code, Time, Entered By, Mobile No
     await appendGymRow([entryNo, name, employeeCode, now, enteredBy, mobile]);
-    return NextResponse.json({ entryNo, time: now }, { status: 201 });
+
+    // Include the entry just written when counting the streak.
+    const streak = currentStreak(
+      [...entries, { rowNumber: 0, entryNo, name, employeeCode, time: now, enteredBy, mobile }],
+      employeeCode
+    );
+    return NextResponse.json({ entryNo, time: now, streak }, { status: 201 });
   } catch (err) {
     console.error("Gym entry failed:", err);
     return NextResponse.json(

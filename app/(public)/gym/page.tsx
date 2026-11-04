@@ -1,23 +1,71 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import GymForm from "@/components/GymForm";
 import GymSuccess from "@/components/GymSuccess";
+import GymWelcomeBack from "@/components/GymWelcomeBack";
+import {
+  clearGymProfile,
+  loadGymProfile,
+  saveGymProfile,
+  type GymProfile,
+} from "@/lib/gymProfile";
 
 export default function GymPublicPage() {
   const [gymEntry, setGymEntry] = useState<
-    { entryNo: string; time: string } | null
+    { entryNo: string; time: string; streak?: number } | null
   >(null);
+  // undefined = not read from storage yet (avoids flashing the form).
+  const [profile, setProfile] = useState<GymProfile | null | undefined>(
+    undefined
+  );
+  // Remembered details to pre-fill when a quick check-in was rejected.
+  const [prefill, setPrefill] = useState<GymProfile | undefined>(undefined);
 
-  async function handleGymEntry(input: { name: string; employeeCode: string }) {
+  useEffect(() => {
+    setProfile(loadGymProfile());
+  }, []);
+
+  async function handleGymEntry(input: GymProfile) {
     const res = await fetch("/api/gym", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(input),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error ?? "Could not submit entry.");
-    setGymEntry({ entryNo: data.entryNo as string, time: data.time as string });
+    if (!res.ok) {
+      const err = new Error(data.error ?? "Could not submit entry.");
+      // Saved details no longer pass validation — let them fix them in the form.
+      if (res.status === 400) Object.assign(err, { invalidInput: true });
+      throw err;
+    }
+    saveGymProfile(input);
+    setProfile(input);
+    setPrefill(undefined);
+    setGymEntry({
+      entryNo: data.entryNo as string,
+      time: data.time as string,
+      streak: typeof data.streak === "number" ? data.streak : undefined,
+    });
+  }
+
+  async function handleQuickCheckIn(p: GymProfile) {
+    try {
+      await handleGymEntry(p);
+    } catch (err) {
+      if ((err as { invalidInput?: boolean }).invalidInput) {
+        clearGymProfile();
+        setPrefill(p);
+        setProfile(null);
+      }
+      throw err;
+    }
+  }
+
+  function handleNotMe() {
+    clearGymProfile();
+    setPrefill(undefined);
+    setProfile(null);
   }
 
   return (
@@ -30,8 +78,21 @@ export default function GymPublicPage() {
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         {gymEntry ? (
           <GymSuccess entry={gymEntry} onDone={() => setGymEntry(null)} />
+        ) : profile === undefined ? (
+          <p className="py-8 text-center text-sm text-slate-400">Loading…</p>
+        ) : profile ? (
+          <GymWelcomeBack
+            profile={profile}
+            onCheckIn={() => handleQuickCheckIn(profile)}
+            onNotMe={handleNotMe}
+          />
         ) : (
-          <GymForm onSubmit={handleGymEntry} />
+          <>
+            <GymForm initial={prefill} onSubmit={handleGymEntry} />
+            <p className="mt-4 text-center text-xs text-slate-400">
+              Fill this once — next time it&apos;s just one tap.
+            </p>
+          </>
         )}
       </div>
     </>

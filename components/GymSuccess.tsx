@@ -4,7 +4,7 @@ export default function GymSuccess({
   entry,
   onDone,
 }: {
-  entry: { entryNo: string; time: string };
+  entry: { entryNo: string; time: string; streak?: number };
   onDone: () => void;
 }) {
   return (
@@ -16,6 +16,8 @@ export default function GymSuccess({
       <p className="mt-1 text-sm text-slate-500">
         Your visit has been logged. Enjoy your workout!
       </p>
+
+      {entry.streak ? <StreakBanner streak={entry.streak} /> : null}
 
       <div className="mx-auto mt-5 max-w-xs rounded-xl border border-slate-200 bg-slate-50 p-4">
         <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
@@ -33,6 +35,21 @@ export default function GymSuccess({
       >
         New entry
       </button>
+    </div>
+  );
+}
+
+function StreakBanner({ streak }: { streak: number }) {
+  const message =
+    streak === 1
+      ? "Day 1 — come back tomorrow to start a streak!"
+      : "Keep it going — come back tomorrow!";
+  return (
+    <div className="mx-auto mt-5 max-w-xs rounded-xl border border-orange-200 bg-orange-50 p-4">
+      <p className="text-2xl font-bold text-orange-600">
+        🔥 {streak}-day streak
+      </p>
+      <p className="mt-1 text-xs text-orange-700">{message}</p>
     </div>
   );
 }
